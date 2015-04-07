@@ -82,24 +82,30 @@ public class DBServlet extends HttpServlet {
         else if (req.getRequestURI().equalsIgnoreCase("/bin/doGetVaults")){
              doGetVaults(req,resp);
         }
+<<<<<<< HEAD
         else if ( req.getRequestURI().equalsIgnoreCase("/bin/doDeleteVault")){
              doDeleteVault(req,resp);
         }
         else if ( req.getRequestURI().equalsIgnoreCase("/bin/doEditVault")){
              doEditVault(req,resp);
         }
+=======
+>>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
         else if(req.getRequestURI().equalsIgnoreCase("/bin/doGetEntries")){
              doGetEntries(req,resp);
         }
         else if(req.getRequestURI().equalsIgnoreCase("/bin/doCreateEntry")){
              doCreateEntry(req,resp);
         }
+<<<<<<< HEAD
         else if(req.getRequestURI().equalsIgnoreCase("/bin/doDeleteEntry")){
              doDeleteEntry(req,resp);
         }
         else if(req.getRequestURI().equalsIgnoreCase("/bin/doEditEntry")){
              doEditEntry(req,resp);
         }
+=======
+>>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
         else {
              resp.getWriter().println("INVALID REQUEST");
         }
@@ -358,7 +364,11 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
         }
         catch (Exception e)
         {
+<<<<<<< HEAD
  						sendError(out, "The server was unable to process your request. Try again later!", null);
+=======
+ 						sendError(out, "The server was unable to proccess your request. Try again later!", null);
+>>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
 
 						e.printStackTrace();
         }
@@ -409,13 +419,18 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
         }
         catch (Exception e)
         {
+<<<<<<< HEAD
  						sendError(out, "The server was unable to process your request. Try again later!",null);
+=======
+ 						sendError(out, "The server was unable to proccess your request. Try again later!",null);
+>>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
 
 						e.printStackTrace();
         }
 
     }
 
+<<<<<<< HEAD
     private void doDeleteVault(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {
         PrintWriter out = resp.getWriter();
@@ -506,6 +521,8 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
         }
     }
 
+=======
+>>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
     private void doCreateEntry(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {    
         PrintWriter out = resp.getWriter();
@@ -527,12 +544,20 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
 						int accountID = -1; 
 						if((accountID = authenticateAndReturnAccountID(email, password)) != -1) {
 
+<<<<<<< HEAD
 		          PreparedStatement statement = conn.prepareStatement("INSERT INTO Entries (vaultID, emailCreatedBy, lastModifiedBy, entryName, text) VALUES(?,?,?,?,?)");
 		          statement.setInt(1, vaultID);
               statement.setString(2, email);
               statement.setString(3, email);
 		          statement.setString(4, entryName);
 							statement.setString(5, text);
+=======
+		          PreparedStatement statement = conn.prepareStatement("INSERT INTO Entries (vaultID, emailCreatedBy, entryName, text) VALUES(?,?,?,?)");
+		          statement.setInt(1, vaultID);
+              statement.setString(2, email);
+		          statement.setString(3, entryName);
+							statement.setString(4, text);
+>>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
               int updated = statement.executeUpdate();
 
               if (updated == 1)
@@ -554,6 +579,7 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
         }
 
     }
+<<<<<<< HEAD
 
     private void doDeleteEntry(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {    
@@ -650,6 +676,8 @@ private void doEditEntry(HttpServletRequest req, HttpServletResponse resp) throw
 
     }
 
+=======
+>>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
     private void doGetEntries(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {    
         PrintWriter out = resp.getWriter();
@@ -671,7 +699,10 @@ private void doEditEntry(HttpServletRequest req, HttpServletResponse resp) throw
 
 							entry.put("vaultID",  rs.getInt("vaultID"));
 							entry.put("emailCreatedBy",  rs.getString("emailCreatedBy"));
+<<<<<<< HEAD
               entry.put("lastModifiedBy", rs.getString("lastModifiedBy"));
+=======
+>>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
 							entry.put("entryName",  rs.getString("entryName"));
 							entry.put("text",  rs.getString("text"));
 
@@ -685,7 +716,11 @@ private void doEditEntry(HttpServletRequest req, HttpServletResponse resp) throw
         }
         catch (Exception e)
         {
+<<<<<<< HEAD
  						sendError(out, "The server was unable to process your request. Try again later!",null);
+=======
+ 						sendError(out, "The server was unable to proccess your request. Try again later!",null);
+>>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
 
 						e.printStackTrace();
         }
