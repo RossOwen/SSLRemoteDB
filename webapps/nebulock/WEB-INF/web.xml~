@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app>
+  <display-name>Example</display-name>
+
+  <!-- Declare the existence of a servlet. -->
+  <servlet>
+    <servlet-name>HelloServlet</servlet-name>
+    <servlet-class>HelloServlet</servlet-class>
+  </servlet>
+   <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Everything in the webapp</web-resource-name>
+      <url-pattern>/secure/*</url-pattern>
+    </web-resource-collection>
+    <user-data-constraint>
+      <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+    </user-data-constraint>
+  </security-constraint>
+  <!-- Map URLs to that servlet. -->
+  <servlet-mapping>
+    <servlet-name>HelloServlet</servlet-name>
+    <url-pattern>/servlet</url-pattern>
+  </servlet-mapping>
+</web-app>

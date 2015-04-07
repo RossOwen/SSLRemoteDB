@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app>
+  <display-name>Bin</display-name>
+
+  <!-- Declare the existence of a servlet. -->
+  <servlet>
+    <servlet-name>DBServlet</servlet-name>
+    <servlet-class>DBServlet</servlet-class>
+  </servlet>
+   <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Everything in the webapp</web-resource-name>
+      <url-pattern>/*</url-pattern>
+    </web-resource-collection>
+    <user-data-constraint>
+      <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+    </user-data-constraint>
+  </security-constraint>
+  <!-- Map URLs to that servlet. -->
+  <servlet-mapping>
+    <servlet-name>DBServlet</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+</web-app>
