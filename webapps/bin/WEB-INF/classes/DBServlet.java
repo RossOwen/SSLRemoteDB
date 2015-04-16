@@ -45,7 +45,7 @@ public class DBServlet extends HttpServlet {
     }
     
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException{
         // SECURITY WARNING:  In order to protect the confidentiality of the password, this communication 
         // should occur over an encrypted https connection, using additional parameters that establish the user's identity, AND
         // using POST not get
@@ -65,14 +65,14 @@ public class DBServlet extends HttpServlet {
         {
              doCreateAccount(req,resp);
         }
-        else if (req.getRequestURI().equalsIgnoreCase("/bin/updateAccount"))
+        /*else if (req.getRequestURI().equalsIgnoreCase("/bin/updateAccount"))
         {
              doUpdateAccount(req,resp);
-        }
-        else if (req.getRequestURI().equalsIgnoreCase("/bin/deleteAccount"))
+        }*/
+        /*else if (req.getRequestURI().equalsIgnoreCase("/bin/deleteAccount"))
         {
              doDeleteAccount(req,resp);
-        }
+        }*/
         else if (req.getRequestURI().equalsIgnoreCase("/bin/login")){
              doLogin(req,resp);
         }
@@ -126,6 +126,12 @@ public class DBServlet extends HttpServlet {
         }
         else if(req.getRequestURI().equalsIgnoreCase("/bin/doDeleteDelegate")){
              doDeleteDelegate(req,resp);
+        }
+        else if(req.getRequestURI().equalsIgnoreCase("/bin/doShareVault")){
+             doShareVault(req,resp);
+        }
+        else if(req.getRequestURI().equalsIgnoreCase("/bin/doCreateKey")){
+             doCreateKey(req,resp);
         }
         else {
              resp.getWriter().println("INVALID REQUEST");
@@ -202,22 +208,30 @@ public class DBServlet extends HttpServlet {
 						System.out.println("Hash for " + email + ": " + new String(getHash(password + salt)));
 						System.out.println("pwd for " + email + ": " + password);
 
-            PreparedStatement statement = conn.prepareStatement("INSERT INTO Accounts (email, pwdhash, salt) VALUES(?,?,?)");
+            PreparedStatement statement = conn.prepareStatement("INSERT INTO Accounts (email, pwdhash, salt) VALUES(?,?,?)", Statement.RETURN_GENERATED_KEYS);
             statement.setString(1,req.getParameter("email"));
             statement.setString(2,new String(getHash(password + salt)));
             statement.setString(3,salt);
 
             int updated = statement.executeUpdate();
             if (updated == 1){
-                out.println("{\"result\":\"success\"}");
+                JSONObject retval = new JSONObject();
+                try(ResultSet genKeys = statement.getGeneratedKeys()){
+                  if(genKeys.next()){
+                    retval.put("accountID", genKeys.getInt(1));
+                  }else{
+                    throw new SQLException("Creating Account failed, no ID obtained");
+                  }
+                  sendSuccess(out, retval);
+                }
             }
             else{
-                out.println("{\"result\":\"failure\"}");
+                sendFailure(out, "Create account failed", null);
             }
         }
         catch (Exception e)
         {
-            out.println("{\"result\":\"failure\"}");
+            sendError(out, "Unable to process your request. Please try again later!", null);
             System.err.println(e);
             e.printStackTrace();
         }
@@ -260,66 +274,45 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
 
             //statement.setString(3,salt);
 
-            
-            System.out.println(email + " " + password);
-            System.out.println("Password hash: " + pwdhash);
 
             ResultSet resultSet = statement.executeQuery();
-            StringBuffer sb = new StringBuffer();
-            sb.append("{");
-            sb.append("  \"result\":\"success\",");
-            sb.append("  \"records\":[");
+
             boolean firstRec = true;
 
 						if (!resultSet.next() ) {
 							sendFailure(out, "Invalid credentials", null);
 						}
             else {
-
-
-							sendSuccess(out, new JSONObject(resultSet.getInt("accountID")));
-							
-                sb.append("              ,");
-                //sb.append("              { \"accountID\":" + resultSet.getInt("accountID") + ",");
-                sb.append("{\"accountID\":\"" + resultSet.getInt("accountID") + "\"}");
+              JSONObject retval = new JSONObject();
+              retval.put("accountID", resultSet.getInt("accountID")); 
+							sendSuccess(out, retval);
             }
-            sb.append("]");
-            sb.append("}");
-            //out.println(sb);
-           //debugging
-            System.out.println(sb);
         }
         catch (Exception e)
         {
             //debugging
-            System.out.println("FAILURE");
-            out.println("{\"result\":\"failure\"}");
+            sendError(out, "Login failed. Please try again later!", null);
             System.err.println(e);
             e.printStackTrace();
         }
 
     }
 
-
-    //TODO:
+    /*
+    //TODO: currently does nothing
     private void doUpdateAccount(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {    
         PrintWriter out = resp.getWriter();
         try
         {
 
-            PreparedStatement statement = conn.prepareStatement("UPDATE Course SET prefix=?, suffix=?, credits=? WHERE id=?");
-            statement.setString(1,req.getParameter("prefix"));
-            statement.setString(2,req.getParameter("suffix"));
-            statement.setString(3,req.getParameter("credits"));
-            statement.setString(4,req.getParameter("id"));
-
+            PreparedStatement statement = conn.prepareStatement("UPDATE ");
             int updated = statement.executeUpdate();
             if (updated == 1){
-                out.println("{\"result\":\"success\"}");
+                sendSuccess(out, new JSONObject());
             }
             else{
-                out.println("{\"result\":\"failure\"}");
+                sendFailure(out, "Updating Account failed, table not updated", null);
             }
         }
         catch (SQLException e)
@@ -330,7 +323,7 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
         }
     }
 
-    //TODO:
+    //TODO: currently does nothing
     private void doDeleteAccount(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {    
         PrintWriter out = resp.getWriter();
@@ -350,11 +343,11 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
         }
         catch (SQLException e)
         {
-            out.println("{\"result\":\"failure\"}");
+            send
             System.err.println(e);
             e.printStackTrace();
         }
-    }
+    }*/
 
     private void doCreateVault(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {    
@@ -375,14 +368,23 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
 						int accountID = -1; 
 						if((accountID = authenticateAndReturnAccountID(email, password)) != -1) {
 
-		            PreparedStatement statement = conn.prepareStatement("INSERT INTO Vaults (accountID, vaultName, vaultDescription) VALUES(?,?,?)");
+		            PreparedStatement statement = conn.prepareStatement("INSERT INTO Vaults (accountID, vaultName, vaultDescription) VALUES(?,?,?)", Statement.RETURN_GENERATED_KEYS);
 		            statement.setInt(1, accountID);
 		            statement.setString(2, vaultName);
 							  statement.setString(3, vaultDescription);
               int updated = statement.executeUpdate();
 
               if (updated == 1){
-                  out.println("{\"result\":\"success\"}");
+                  //return the vaultID of newly created vault
+                  JSONObject retval = new JSONObject();
+                  try(ResultSet genKeys = statement.getGeneratedKeys()){
+                    if(genKeys.next()){
+                      retval.put("vaultID", genKeys.getInt(1));
+                    }else{
+                      throw new SQLException("Creating vault failed, no ID obtained");
+                    }
+                    sendSuccess(out, retval);
+                  }
               }
               else{
                   sendFailure(out, "Unable to Create Vault for AccountID: " + accountID, null);
@@ -399,6 +401,7 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
 
     }
 
+    //returns all vault the user has been GIVEN access to
 		private void doGetDelegatedVaults(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {    
         PrintWriter out = resp.getWriter();
@@ -451,6 +454,7 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
         }
 
     }
+
 
 		private void doGetVaults(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {    
@@ -529,7 +533,9 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
 
               if (updated == 1){
                   System.out.println("Deleting Vault with vaultID: " + vaultID);
-                  out.println("{\"result\":\"success\"}");
+                  JSONObject retval = new JSONObject();
+                  retval.put("vaultID", vaultID);
+                  sendSuccess(out, retval);
               }
               else{
                   sendFailure(out, "Unable to Delete Vault with VaultID: " + vaultID, null);
@@ -563,7 +569,7 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
 						if((accountID = authenticateAndReturnAccountID(email, password)) != -1) {
 
               //TODO: give defaults for vaultName and vaultDescription
-		          PreparedStatement preparedStatement = conn.prepareStatement("UPDATE Vaults SET vaultName = ?, vaultDescription = ? WHERE accountID = ? AND vaultID = ?");
+		          PreparedStatement preparedStatement = conn.prepareStatement("UPDATE Vaults SET vaultName = ?, vaultDescription = ? WHERE accountID = ? AND vaultID = ?", Statement.RETURN_GENERATED_KEYS);
 		          preparedStatement.setString(1, vaultName);
               preparedStatement.setString(2, vaultDescription);
               preparedStatement.setInt(3, accountID);
@@ -572,10 +578,15 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
 							int updated = preparedStatement.executeUpdate();
 
               if (updated == 1){
-                  System.out.println("Updated Vault: " + vaultID);
-                  System.out.println("  VaultName = " + vaultName);
-                  System.out.println("  VaultDescription = " + vaultDescription);
-                  out.println("{\"result\":\"success\"}");
+                  JSONObject retval = new JSONObject();
+                  try(ResultSet genKeys = preparedStatement.getGeneratedKeys()){
+                    if(genKeys.next()){
+                      retval.put("entryID", genKeys.getInt(1));
+                    }else{
+                      throw new SQLException("Editting entry failed, no ID obtained");
+                    }
+                    sendSuccess(out, retval);
+                  }
               }
               else{
                   sendFailure(out, "Unable do Update Vault with VaultID: " + vaultID, null);
@@ -614,7 +625,7 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
 						int accountID = -1; 
 						if((accountID = authenticateAndReturnAccountID(email, password)) != -1) {
 
-		          PreparedStatement statement = conn.prepareStatement("INSERT INTO Entries (vaultID, emailCreatedBy, lastModifiedBy, entryName, text) VALUES(?,?,?,?,?)");
+		          PreparedStatement statement = conn.prepareStatement("INSERT INTO Entries (vaultID, emailCreatedBy, lastModifiedBy, entryName, text) VALUES(?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
 		          statement.setInt(1, vaultID);
               statement.setString(2, email);
               statement.setString(3, email);
@@ -624,7 +635,15 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
               int updated = statement.executeUpdate();
 
               if (updated == 1){
-                  out.println("{\"result\":\"success\"}");
+                  JSONObject retval = new JSONObject();
+                  try(ResultSet genKeys = statement.getGeneratedKeys()){
+                    if(genKeys.next()){
+                      retval.put("entryID", genKeys.getInt(1));
+                    }else{
+                      throw new SQLException("Creating entry failed, no ID obtained");
+                    }
+                    sendSuccess(out, retval);
+                  }
               }
               else{
                   sendFailure(out, "derp", null);
@@ -670,7 +689,7 @@ private void doLogin(HttpServletRequest req, HttpServletResponse resp) throws IO
               int updated = statement.executeUpdate();
 
               if (updated == 1){
-                  out.println("{\"result\":\"success\"}");
+                  sendSuccess(out, new JSONObject());
               }
               else{
                   sendFailure(out, "Entry with vaultID " + vaultID + " and entryName = " + entryName, null);
@@ -721,7 +740,7 @@ private void doEditEntry(HttpServletRequest req, HttpServletResponse resp) throw
               int updated = statement.executeUpdate();
 
               if (updated == 1){
-                  out.println("{\"result\":\"success\"}");
+                  sendSuccess(out, new JSONObject());
               }
               else{
                   sendFailure(out, "Entry with vaultID " + vaultID + " and entryName = " + entryName, null);
@@ -865,7 +884,7 @@ private void doEditEntry(HttpServletRequest req, HttpServletResponse resp) throw
                 int updated = statement.executeUpdate();
 
                 if (updated == 1){
-                    out.println("{\"result\":\"success\"}");
+                    sendSuccess(out, new JSONObject());
                 }
                 else{
                     sendFailure(out, "Unable to Create Contact", null);
@@ -912,7 +931,7 @@ private void doDeleteContact(HttpServletRequest req, HttpServletResponse resp) t
 
                 if (updated == 1){
                     System.out.println("Deleting Contact with email: " + contactEmail);
-                    out.println("{\"result\":\"success\"}");
+                    sendSuccess(out, new JSONObject());
                 }
                 else{
                     sendFailure(out, "Unable to Delete Contact with email: " + contactEmail, null);
@@ -966,7 +985,7 @@ private void doEditContact(HttpServletRequest req, HttpServletResponse resp) thr
                   int updated = statement.executeUpdate();
 
                   if (updated == 1){
-                      out.println("{\"result\":\"success\"}");
+                      sendSuccess(out, new JSONObject());
                   }
                   else{
                       sendFailure(out, "Unable to edit contact with email: " + contactEmail, null);
@@ -1019,7 +1038,7 @@ private void doEditDelegate(HttpServletRequest req, HttpServletResponse resp) th
               int updated = statement.executeUpdate();
 
               if (updated == 1)
-                  out.println("{\"result\":\"success\"}");
+                  sendSuccess(out, new JSONObject());
               else
                   sendFailure(out, "Unable to edit delegate", null);
 
@@ -1065,7 +1084,7 @@ private void doEditDelegate(HttpServletRequest req, HttpServletResponse resp) th
               int updated = statement.executeUpdate();
 
               if (updated == 1){
-                  out.println("{\"result\":\"success\"}");
+                  sendSuccess(out, new JSONObject());
               }
               else{
                   sendFailure(out, "Unable to delete delegate", null);
@@ -1080,7 +1099,6 @@ private void doEditDelegate(HttpServletRequest req, HttpServletResponse resp) th
 
 						e.printStackTrace();
         }
-
     }
 
     private void doCreateDelegate(HttpServletRequest req, HttpServletResponse resp) throws IOException
@@ -1112,7 +1130,7 @@ private void doEditDelegate(HttpServletRequest req, HttpServletResponse resp) th
                 int updated = statement.executeUpdate();
 
                 if (updated == 1){
-                    out.println("{\"result\":\"success\"}");
+                    sendSuccess(out, new JSONObject());
                 }
                 else{
                     sendFailure(out, "Unable to add delegate", null);
@@ -1138,7 +1156,7 @@ private void doGetDelegates(HttpServletRequest req, HttpServletResponse resp) th
         PrintWriter out = resp.getWriter();
         try
         {
-            String email = req.getParameter("email"); //email of owner of contacts list
+            String email = req.getParameter("email");
             String password = req.getParameter("password");
             int vaultID = Integer.parseInt(req.getParameter("vaultID"));
 
@@ -1176,10 +1194,98 @@ private void doGetDelegates(HttpServletRequest req, HttpServletResponse resp) th
             sendError(out, "The server was unable to process your request. Try again later!",null);
             e.printStackTrace();
         }
-
     }
 
+private void doShareVault(HttpServletRequest req, HttpServletResponse resp) throws IOException
+{
+    PrintWriter out = resp.getWriter();
+    try{
+        String email = req.getParameter("email");
+        String password = req.getParameter("password");
+        int vaultID = Integer.parseInt(req.getParameter("vaultID"));
+        String delegateEmail = req.getParameter("delegateEmail");
+        long keyMost = Long.parseLong(req.getParameter("keyMost"));
+        long keyLeast = Long.parseLong(req.getParameter("keyLeast"));
 
+        int accountID = -1;
+				if((accountID = authenticateAndReturnAccountID(email, password)) != -1) {
+            int delegateAccountID = -1;
+            if((delegateAccountID = getAccountIDFromEmail(delegateEmail)) != -1) {
+                PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO Keys (accountID, vaultID, keyMost, keyLeast) VALUES (?,?,?,?)");
+                preparedStatement.setInt(1, delegateAccountID);
+                preparedStatement.setInt(2, vaultID);
+                preparedStatement.setLong(3, keyMost);
+                preparedStatement.setLong(4, keyLeast);
+
+                int updated = preparedStatement.executeUpdate();
+                if(updated == 1){
+                    sendSuccess(out, new JSONObject());
+                } else{
+                    sendFailure(out, "Unable to share vault", null);
+                }
+            }else {
+                sendFailure(out,"Delegate Email "+ delegateEmail +" does not exist in DB", null);
+            }
+        }else {
+            sendFailure(out, "Invalid password", null);
+        }
+    }
+    catch (Exception e){
+        sendError(out, "The server was unable to process your request. Try again later!",null);
+        e.printStackTrace();
+    }
+}
+
+private void doCreateKey(HttpServletRequest req, HttpServletResponse resp) throws IOException
+{
+    PrintWriter out = resp.getWriter();
+    try{
+        String email = req.getParameter("email");
+        String password = req.getParameter("password");
+        int vaultID = Integer.parseInt(req.getParameter("vaultID"));
+        long keyMost = Long.parseLong(req.getParameter("keyMost"));
+        long keyLeast = Long.parseLong(req.getParameter("keyLeast"));
+        String cipherData = req.getParameter("cipherData");
+        byte[] challenge = (req.getParameter("challenge")).getBytes(); //Does this work?
+        String responseData = req.getParameter("responseData");
+
+        int accountID = -1;
+        if((accountID = authenticateAndReturnAccountID(email,password)) != -1){
+            conn.setAutoCommit(false);
+            try{
+                PreparedStatement insertKeyStatement = conn.prepareStatement("INSERT INTO VaultKeys(UUID_Most_Significant, UUID_Least_Significant, cipherData, challenge, responseData) VALUES(?,?,?,?,?)");
+                insertKeyStatement.setLong(1, keyMost);
+                insertKeyStatement.setLong(2, keyLeast);
+                insertKeyStatement.setString(3, cipherData);
+                insertKeyStatement.setBytes(4, challenge);
+                insertKeyStatement.setString(5, responseData);
+                insertKeyStatement.executeUpdate();
+
+                //statement to insert to AccountToVaultToKey table
+                PreparedStatement insertAVKStatement = conn.prepareStatement("INSERT INTO AccountToVaultToKey (accountID, vaultID, keyMost, keyLeast) VALUES(?,?,?,?)");
+                insertAVKStatement.setInt(1, accountID);
+                insertAVKStatement.setInt(2, vaultID);
+                insertAVKStatement.setLong(3, keyMost);
+                insertAVKStatement.setLong(4, keyLeast);
+                insertAVKStatement.executeUpdate();
+
+                conn.commit();
+                conn.setAutoCommit(true); //TODO: is this neccessary?
+
+                sendSuccess(out, new JSONObject());
+            }catch(SQLException sqle){
+                sendFailure(out, "An SQL Exception has occurred.", null);
+                sqle.printStackTrace();
+            }
+            
+        }else {
+            sendFailure(out, "Invalid password", null);
+        }
+    }catch(Exception e){
+        sendError(out, "The server was unable to process your request. Try again later!",null);
+        e.printStackTrace();
+    }
+}
 
     public byte[] getHash(String password) throws Exception {
       MessageDigest digest = MessageDigest.getInstance("SHA-512");
@@ -1204,7 +1310,8 @@ private void doGetDelegates(HttpServletRequest req, HttpServletResponse resp) th
 				System.out.println(errorMessage);
 				stream.println("{");
 				stream.println("\tresult : \"failure\",\n");
-				stream.println("\tmessage : \"" + errorMessage + "\"");
+				stream.println("\tmessage : \"" + errorMessage + "\",");
+        stream.println("\tdata : " + data);
 				stream.println("}");
 		}
 
@@ -1220,21 +1327,20 @@ private void doGetDelegates(HttpServletRequest req, HttpServletResponse resp) th
 		}
 
     public int getAccountIDFromEmail(String email) throws IOException{
-        try
-        {
-            //get accountID using email
-            PreparedStatement getContactIDStmt = conn.prepareStatement("SELECT accountID FROM Accounts WHERE email = ?");
-            getContactIDStmt.setString(1, email);
-            ResultSet rs = getContactIDStmt.executeQuery();
-            int accountID = -1;
-            while(rs.next()){
-              accountID = rs.getInt("accountID");
-            }
-            return accountID;
+        try{
+          //get accountID using email
+          PreparedStatement getContactIDStmt = conn.prepareStatement("SELECT accountID FROM Accounts WHERE email = ?");
+          getContactIDStmt.setString(1, email);
+          ResultSet rs = getContactIDStmt.executeQuery();
+          int accountID = -1;
+          while(rs.next()){
+            accountID = rs.getInt("accountID");
+          }
+          return accountID;
         }
         catch (Exception e)
         {
-						e.printStackTrace();
+          e.printStackTrace();
         }
         return -1;
     }
