@@ -1,6 +1,6 @@
 TO COMPILE:
 
-javac -cp resources/java-json.jar:/resources/mysql-connector-java-5.1.29-bin.jar:resources/servlet-api-2.5.jar ./webapps/bin/WEB-INF/classes/DBServlet.java
+javac -cp resources/java-json.jar:/resources/mysql-connector-java-5.1.29-bin.jar:resources/servlet-api-2.5.jar:resources/javax.mail.jar ./webapps/bin/WEB-INF/classes/DBServlet.java
 
 TO RUN 
 

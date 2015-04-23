@@ -1,17 +1,6 @@
-<<<<<<< HEAD
-FROM ROOT DIRECTORY
-
-
-TO COMPILE:
-
-
-
-javac -cp /home/goy5022/Desktop/jetty-ssl-server/resources/java-json.jar:/home/goy5022/Desktop/jetty-ssl-server/resources/mysql-connector-java-5.1.29-bin.jar:/home/goy5022/Desktop/jetty-ssl-server/resources/servlet-api-2.5.jar ./webapps/bin/WEB-INF/classes/DBServlet.java
-=======
 TO COMPILE:
 
 javac -cp resources/java-json.jar:/resources/mysql-connector-java-5.1.29-bin.jar:resources/servlet-api-2.5.jar ./webapps/bin/WEB-INF/classes/DBServlet.java
->>>>>>> 0bfebf63fdcc3912146182087bc54f762c501201
 
 TO RUN 
 
